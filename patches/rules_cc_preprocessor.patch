@@ -1,0 +1,57 @@
+diff --git a/cc/toolchains/actions/BUILD b/cc/toolchains/actions/BUILD
+--- a/cc/toolchains/actions/BUILD
++++ b/cc/toolchains/actions/BUILD
+@@ -234,6 +234,19 @@ cc_action_type_set(
+         ":objcpp_compile",
+     ],
+ )
++
++cc_action_type_set(
++    name = "preprocessor_define_actions",
++    actions = [
++        ":linkstamp_compile",
++        ":cpp_compile",
++        ":cpp_header_parsing",
++        ":cpp_module_compile",
++        ":cpp_module_codegen",
++        ":clif_match",
++        ":objcpp_compile",
++    ],
++)
+ 
+ cc_action_type_set(
+     name = "compile_actions",
+@@ -245,6 +258,7 @@ cc_action_type_set(
+         ":assembly_actions",
+         ":objc_compile",
+         ":objcpp_compile",
++        ":preprocessor_define_actions",
+     ],
+ )
+ 
+ diff --git a/cc/toolchains/variables/BUILD b/cc/toolchains/variables/BUILD
+--- a/cc/toolchains/variables/BUILD
++++ b/cc/toolchains/variables/BUILD
+@@ -365,7 +365,7 @@ cc_variable(
+ 
+ cc_variable(
+     name = "preprocessor_defines",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = ["//cc/toolchains/actions:preprocessor_define_actions"],
+     type = types.list(types.string),
+ )
+ 
+ diff --git a/cc/toolchains/args/preprocessor_defines/BUILD b/cc/toolchains/args/preprocessor_defines/BUILD
+--- a/cc/toolchains/args/preprocessor_defines/BUILD
++++ b/cc/toolchains/args/preprocessor_defines/BUILD
+@@ -9,7 +9,7 @@ cc_feature(
+ )
+ 
+ cc_args(
+     name = "preprocessor_defines",
+-    actions = ["//cc/toolchains/actions:compile_actions"],
++    actions = ["//cc/toolchains/actions:preprocessor_define_actions"],
+     args = ["-D{preprocessor_defines}"],
+     format = {"preprocessor_defines": "//cc/toolchains/variables:preprocessor_defines"},
+     iterate_over = "//cc/toolchains/variables:preprocessor_defines",
+ )
