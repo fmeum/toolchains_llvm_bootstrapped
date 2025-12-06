@@ -1,3 +1,4 @@
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_skylib//rules/directory:directory.bzl", "directory")
 load("@bazel_skylib//rules/directory:subdirectory.bzl", "subdirectory")
 load("@rules_cc//cc/toolchains:tool.bzl", "cc_tool")
@@ -90,6 +91,14 @@ cc_tool(
 cc_tool(
     name = "llvm-strip",
     src = "bin/llvm-strip",
+)
+
+# TODO(zbarsky): Remove this once we cut a new llvm release.
+copy_file(
+    name = "shim_dlltool",
+    out = "bin/llvm-dlltool",
+    src = "bin/llvm-ar",
+    visibility = ["//visibility:public"],
 )
 
 ##

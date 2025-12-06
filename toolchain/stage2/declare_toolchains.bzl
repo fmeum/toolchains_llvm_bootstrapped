@@ -17,6 +17,12 @@ def declare_toolchains():
                 "//toolchain/stage2/args:default_link_flags",
                 "//toolchain/stage2/args:ubsan_flags",
             ],
+            artifact_name_patterns = select({
+                "@platforms//os:windows": [
+                    "//toolchain:windows_executable_pattern",
+                ],
+                "//conditions:default": [],
+            }),
             enabled_features = ["@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features"],
             known_features = ["@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features"],
             tool_map = platform_cc_tool_map(exec_os, exec_cpu),
@@ -41,4 +47,3 @@ def declare_toolchains():
                 ],
                 visibility = ["//visibility:public"],
             )
-

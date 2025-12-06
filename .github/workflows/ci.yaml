@@ -19,7 +19,7 @@ jobs:
       fail-fast: false
       matrix:
         # only test on linux for now, macos is not ready.
-        os: [ubuntu-latest, ubuntu-24.04-arm]
+        os: [ubuntu-latest, ubuntu-24.04-arm, windows-latest, windows-2022-arm64]
         bazel_version: [8.x, last_rc]
         folder:
           - "e2e/rules_cc"
@@ -76,3 +76,73 @@ jobs:
             --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY \
             $EXTRA_ARGS \
             //...
+
+  windows_mingw_smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel_version: [8.x, last_rc]
+    runs-on: windows-latest
+    name: Windows MinGW smoke (${{ matrix.bazel_version }})
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build and run MinGW binaries
+        working-directory: e2e/rules_cc
+        shell: bash
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          set +e
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            run \
+            --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY \
+            //:mingw_hello
+          status=$?
+          set -e
+
+          echo "mingw_hello exit code: $status"
+          if [[ $status -ne 0 ]]; then
+            echo "mingw_hello was expected to exit successfully." >&2
+            exit 1
+          fi
+
+  windows_mingw_smoke_arm64:
+    strategy:
+      fail-fast: false
+      matrix:
+        bazel_version: [8.x, last_rc]
+    runs-on: windows-2022-arm64
+    name: Windows Arm64 MinGW smoke (${{ matrix.bazel_version }})
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Build and run MinGW arm64 binary
+        working-directory: e2e/rules_cc
+        shell: bash
+        env:
+          USE_BAZEL_VERSION: ${{ matrix.bazel_version }}
+          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          set +e
+          bazel \
+            --bazelrc=$GITHUB_WORKSPACE/.github/workflows/ci.bazelrc \
+            --bazelrc=.bazelrc \
+            run \
+            --remote_header=x-buildbuddy-api-key=$BUILDBUDDY_API_KEY \
+            //:mingw_hello_arm64
+          status=$?
+          set -e
+
+          echo "mingw_hello_arm64 exit code: $status"
+          if [[ $status -ne 0 ]]; then
+            echo "mingw_hello_arm64 was expected to exit successfully." >&2
+            exit 1
+          fi

@@ -1372,6 +1372,7 @@ cc_library(
         "@libcxxabi//:headers",
     ] + select({
         "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
         "@platforms//os:linux": [
             "@kernel_headers//:kernel_headers",
         ],

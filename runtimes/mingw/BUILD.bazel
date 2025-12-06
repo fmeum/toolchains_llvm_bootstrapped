@@ -1,0 +1,29 @@
+alias(
+    name = "kernel32_onecore_import_lib_x86_64",
+    actual = "@mingw//:import_lib_x86_64_kernel32_onecore",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "kernel32_onecore_import_lib_aarch64",
+    actual = "@mingw//:import_lib_aarch64_kernel32_onecore",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "mingw_library_search_directory_x86_64",
+    actual = "@mingw//:mingw_import_libraries_x86_64_directory",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "mingw_library_search_directory_aarch64",
+    actual = "@mingw//:mingw_import_libraries_aarch64_directory",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "mingw_headers_include_search_directory",
+    actual = "@mingw//:mingw_headers",
+    visibility = ["//visibility:public"],
+)

@@ -93,6 +93,9 @@ LLVM_RELEASE_ASSETS_SHA256 = {
 musl = use_extension("//runtimes/musl/extension:musl.bzl", "musl")
 use_repo(musl, "musl_libc")
 
+mingw = use_extension("//runtimes/mingw/extension:mingw.bzl", "mingw")
+use_repo(mingw, "mingw")
+
 http_archive(
     name = "macosx15.4.sdk",
     urls = ["https://github.com/hexops-graveyard/sdk-macos-11.3/archive/ccbaae84cc39469a6792108b24480a4806e09d59.tar.gz"],

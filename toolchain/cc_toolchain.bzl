@@ -4,6 +4,12 @@ def cc_toolchain(name, tool_map):
     _cc_toolchain(
         name = name,
         args = ["//toolchain:toolchain_args"],
+        artifact_name_patterns = select({
+            "@platforms//os:windows": [
+                "//toolchain:windows_executable_pattern",
+            ],
+            "//conditions:default": [],
+        }),
         known_features = [
             "//toolchain/features:static_link_cpp_runtimes",
             "@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features",
@@ -17,17 +23,19 @@ def cc_toolchain(name, tool_map):
             ],
             "//conditions:default": [],
         }),
-        enabled_features = select({
-            "@platforms//os:linux": [
-                "//toolchain/features:static_link_cpp_runtimes",
-            ],
-            "@platforms//os:macos": [],
-            "@platforms//os:none": [],
-        }) + [
-            "@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features",
-            # Do not enable this manually. Those features are enabled internally by --compilation_mode flags family.
-            "//toolchain/features/legacy:all_legacy_builtin_features",
-        ] + select({
+    enabled_features = select({
+        "@platforms//os:linux": [
+            "//toolchain/features:static_link_cpp_runtimes",
+        ],
+        "@platforms//os:macos": [],
+        "@platforms//os:windows": [],
+        "@platforms//os:none": [],
+        "//conditions:default": [],
+    }) + [
+        "@rules_cc//cc/toolchains/args:experimental_replace_legacy_action_config_features",
+        # Do not enable this manually. Those features are enabled internally by --compilation_mode flags family.
+        "//toolchain/features/legacy:all_legacy_builtin_features",
+    ] + select({
             # Should be last. This is a workaround to add those args last.
             # See comment of this target.
             "@platforms//os:linux": [
