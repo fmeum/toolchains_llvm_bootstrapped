@@ -14,7 +14,7 @@ cc_args_list(
         ],
         "@platforms//os:windows": [
             "//toolchain/args/windows:mingw_headers_include_search_paths",
-            "//toolchain:windows_library_search_args",
+            "//toolchain/args/windows:windows_library_search_args",
         ],
         "//conditions:default": [],
     }),
