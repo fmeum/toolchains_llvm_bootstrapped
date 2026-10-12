@@ -238,25 +238,23 @@ cc_runtime_stage0_library(
         "debug/stack_chk_fail_local.c",
     ] + selects.with_or({
         (
-            # unconstrained defaults to 2.28
             # TODO(cerisier): Make a is_at_least_gnu_version macro helper.
-            "@llvm//constraints/libc:unconstrained",
-            "@llvm//constraints/libc:gnu.2.17",
-            "@llvm//constraints/libc:gnu.2.18",
-            "@llvm//constraints/libc:gnu.2.19",
-            "@llvm//constraints/libc:gnu.2.20",
-            "@llvm//constraints/libc:gnu.2.21",
-            "@llvm//constraints/libc:gnu.2.22",
-            "@llvm//constraints/libc:gnu.2.23",
-            "@llvm//constraints/libc:gnu.2.24",
-            "@llvm//constraints/libc:gnu.2.25",
-            "@llvm//constraints/libc:gnu.2.26",
-            "@llvm//constraints/libc:gnu.2.27",
-            "@llvm//constraints/libc:gnu.2.28",
-            "@llvm//constraints/libc:gnu.2.29",
-            "@llvm//constraints/libc:gnu.2.30",
-            "@llvm//constraints/libc:gnu.2.31",
-            "@llvm//constraints/libc:gnu.2.32",
+            "@llvm//platforms/config:gnu.2.17",
+            "@llvm//platforms/config:gnu.2.18",
+            "@llvm//platforms/config:gnu.2.19",
+            "@llvm//platforms/config:gnu.2.20",
+            "@llvm//platforms/config:gnu.2.21",
+            "@llvm//platforms/config:gnu.2.22",
+            "@llvm//platforms/config:gnu.2.23",
+            "@llvm//platforms/config:gnu.2.24",
+            "@llvm//platforms/config:gnu.2.25",
+            "@llvm//platforms/config:gnu.2.26",
+            "@llvm//platforms/config:gnu.2.27",
+            "@llvm//platforms/config:gnu.2.28",
+            "@llvm//platforms/config:gnu.2.29",
+            "@llvm//platforms/config:gnu.2.30",
+            "@llvm//platforms/config:gnu.2.31",
+            "@llvm//platforms/config:gnu.2.32",
         ): [
             # libc_nonshared.a redirected stat functions to xstat until glibc 2.33,
             # when they were finally versioned like other symbols.
@@ -277,7 +275,7 @@ cc_runtime_stage0_library(
             # From csu/Makefile
             "@llvm//3rd_party/libc/glibc/csu:elf-init-2.31.c",
         ],
-        "@llvm//constraints/libc:gnu.2.33": [
+        "@llvm//platforms/config:gnu.2.33": [
             # if libc <= 2.32 but also <= 2.33
             # __libc_start_main used to require statically linked init/fini callbacks
             # until glibc 2.34 when they were assimilated into the shared library.
