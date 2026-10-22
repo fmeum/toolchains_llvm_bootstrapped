@@ -440,6 +440,9 @@ static int has_suffix(const char *value, const char *suffix) {
          strcmp(value + value_length - suffix_length, suffix) == 0;
 }
 
+/* lld's excludeSymbols for targets other than i386, plus the ARM64EC ones, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L110-L131
+ */
 static const char *const gnu_excluded_symbols[] = {
     "__NULL_IMPORT_DESCRIPTOR",
     "_pei386_runtime_relocator",
@@ -456,12 +459,24 @@ static const char *const gnu_excluded_symbols[] = {
     "__chpe_metadata",
 };
 
+/* lld's excludeSymbolPrefixes, plus the ones for targets other than i386 and
+ * for ARM64EC, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L69-L84
+ * and
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L126-L130
+ */
 static const char *const gnu_excluded_prefixes[] = {
-    "__imp_",  "__IMPORT_DESCRIPTOR_", "__nm_",    "__rtti_",
-    "__builtin_", ".",                 "__profc_", "__profd_",
-    "__profvp_",  "_head_",            "__os_arm64x_",
+    "__imp_",       "__IMPORT_DESCRIPTOR_",
+    "__nm_",        "__rtti_",
+    "__builtin_",   ".",
+    "__profc_",     "__profd_",
+    "__profvp_",    "_head_",
+    "__os_arm64x_",
 };
 
+/* lld's excludeSymbolSuffixes, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L86-L89
+ */
 static const char *const gnu_excluded_suffixes[] = {
     "_iname",
     "_NULL_THUNK_DATA",
@@ -488,7 +503,9 @@ static int gnu_excluded_symbol(const char *symbol) {
 
 /* Matches lld's MinGW auto-export: every regular or common external
  * definition except linker, runtime and import machinery. Read-only data such
- * as Itanium vtables and typeinfo is exported too. */
+ * as Itanium vtables and typeinfo is exported too, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L145-L166
+ */
 static int add_gnu_nm_symbol(struct symbol_sets *sets, const char *symbol,
                              char type) {
   if (symbol[0] == '\0' || !isupper((unsigned char)type) || type == 'U' ||
@@ -505,7 +522,9 @@ static int add_gnu_nm_symbol(struct symbol_sets *sets, const char *symbol,
 }
 
 /* lld doesn't auto-export a symbol whose __imp_ pointer is defined, since that
- * means it is itself imported. */
+ * means it is itself imported, see
+ * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L164-L166
+ */
 static void remove_imported_symbols(struct symbol_sets *sets,
                                     const struct string_list *import_pointers) {
   struct string_list *lists[2];
@@ -544,8 +563,7 @@ static int add_nm_symbol(struct symbol_sets *sets, char *symbol, char type) {
   return 1;
 }
 
-static int parse_nm_output(struct symbol_sets *sets, FILE *output,
-                           enum abi abi,
+static int parse_nm_output(struct symbol_sets *sets, FILE *output, enum abi abi,
                            struct string_list *import_pointers) {
   char *line;
   rewind(output);
