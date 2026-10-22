@@ -2,6 +2,10 @@
 #include <cstring>
 #include <stdexcept>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include "cxx_shared_library.h"
 
 struct Square : Shape {
@@ -16,6 +20,17 @@ int main() {
     std::fprintf(stderr, "unexpected values\n");
     return 1;
   }
+#ifdef _WIN32
+  // Auto-export has to skip the statically linked C++ runtime.
+  HMODULE library = GetModuleHandleA("libcxx_shared_library.dll");
+  if (library == nullptr ||
+      GetProcAddress(library, "_Z14make_and_countv") == nullptr ||
+      GetProcAddress(library, "__cxa_throw") != nullptr ||
+      GetProcAddress(library, "unw_getcontext") != nullptr) {
+    std::fprintf(stderr, "unexpected exports\n");
+    return 1;
+  }
+#endif
   try {
     throw_out_of_range();
   } catch (const std::out_of_range& e) {
