@@ -1945,6 +1945,7 @@ cc_library(
     name = "cxx_shared_library_lib",
     srcs = ["cxx_shared_library.cc"],
     hdrs = ["cxx_shared_library.h"],
+    local_defines = ["CXX_SHARED_LIBRARY_IMPLEMENTATION"],
 )
 
 cc_shared_library(
@@ -1958,9 +1959,5 @@ cc_test(
     dynamic_deps = [":cxx_shared_library"],
     # The remote executors only run Linux.
     exec_properties = {"test.no-remote": "1"},
-    target_compatible_with = select({
-        "@llvm//constraints/windows/abi:msvc": ["@platforms//:incompatible"],
-        "//conditions:default": [],
-    }),
     deps = [":cxx_shared_library_lib"],
 )

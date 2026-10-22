@@ -2,7 +2,7 @@
 #include <cstring>
 #include <stdexcept>
 
-#ifdef _WIN32
+#ifdef __MINGW32__
 #include <windows.h>
 #endif
 
@@ -20,7 +20,7 @@ int main() {
     std::fprintf(stderr, "unexpected values\n");
     return 1;
   }
-#ifdef _WIN32
+#ifdef __MINGW32__
   // Auto-export has to skip the statically linked C++ runtime.
   HMODULE library = GetModuleHandleA("libcxx_shared_library.dll");
   if (library == nullptr ||
