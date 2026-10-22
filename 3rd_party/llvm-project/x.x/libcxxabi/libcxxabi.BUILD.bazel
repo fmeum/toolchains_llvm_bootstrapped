@@ -111,8 +111,14 @@ cc_library(
     ] if int(LLVM_VERSION_MAJOR) >= 22 else []) + [
         # DHAVE___CXA_THREAD_ATEXIT_IMPL (gnu but not linux and glibc >= 2.18)
     ] + select({
+        # Like upstream's LIBCXXABI_HERMETIC_STATIC_LIBRARY, which is the
+        # default on Windows: libc++abi also includes libc++ headers, whose
+        # annotations would otherwise make every DLL that links it statically
+        # export operator new/delete, std::exception, std::terminate etc. The
+        # empty value matches __config_site's definition.
         ":windows_static": [
             "_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS",
+            "_LIBCPP_DISABLE_VISIBILITY_ANNOTATIONS=",
         ],
         "//conditions:default": [],
     }),

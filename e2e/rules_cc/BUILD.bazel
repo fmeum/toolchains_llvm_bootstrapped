@@ -7,6 +7,7 @@ load("@platforms//host:constraints.bzl", "HOST_CONSTRAINTS")
 load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
 load("@rules_cc//cc:cc_import.bzl", "cc_import")
 load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
 load("@rules_cc//cc:cc_static_library.bzl", "cc_static_library")
 load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("@rules_cc//cc:objc_library.bzl", "objc_library")
@@ -1938,4 +1939,38 @@ exec_test(
         "@platforms//os:windows": ["@platforms//:incompatible"],
         "//conditions:default": [],
     }),
+)
+
+# A C++ shared library whose API includes a vtable, a static data member, a
+# const table and an exception thrown across the library boundary. On Windows
+# GNU targets, the statically linked C++ runtime must not export any symbols:
+# that would disable lld's auto-export for the library's own symbols and clash
+# with the test's own copy of the runtime.
+cc_library(
+    name = "cxx_shared_library_lib",
+    srcs = ["cxx_shared_library.cc"],
+    hdrs = ["cxx_shared_library.h"],
+)
+
+cc_shared_library(
+    name = "cxx_shared_library",
+    # TODO: Use the default name once MinGW DLLs are named lib<name>.dll.
+    shared_lib_name = select({
+        "@platforms//os:macos": "libcxx_shared_library.dylib",
+        "@platforms//os:windows": "libcxx_shared_library.dll",
+        "//conditions:default": "libcxx_shared_library.so",
+    }),
+    deps = [":cxx_shared_library_lib"],
+)
+
+cc_test(
+    name = "cxx_shared_library_test",
+    srcs = ["cxx_shared_library_test.cc"],
+    dynamic_deps = [":cxx_shared_library"],
+    exec_properties = {"test.no-remote": "1"},
+    target_compatible_with = select({
+        "@llvm//constraints/windows/abi:msvc": ["@platforms//:incompatible"],
+        "//conditions:default": [],
+    }),
+    deps = [":cxx_shared_library_lib"],
 )
