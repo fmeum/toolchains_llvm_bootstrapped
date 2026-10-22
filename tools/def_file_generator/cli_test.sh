@@ -88,7 +88,6 @@ expect_failure "DEF_FILE_GENERATOR_ABI must be 'msvc' or 'gnu'" \
   "${DEF_FILE_GENERATOR}" "${test_tmp}/rejected.def" sample.dll \
   "${test_tmp}/quoted inputs/symbols.obj"
 
-# MinGW: match lld's auto-export, which an explicit DEF file disables.
 mkdir "${test_tmp}/mingw"
 cat >"${test_tmp}/mingw/classes.cpp" <<'EOF'
 struct Base {

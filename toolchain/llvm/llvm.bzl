@@ -240,8 +240,6 @@ def declare_llvm_targets(*, suffix = ""):
         visibility = ["//visibility:public"],
     )
 
-    # MinGW links with lld's GNU driver like other targets, but DEF files for
-    # windows_export_all_symbols follow lld's MinGW auto-export rules.
     cc_tool_map(
         name = "tools_for_mingw",
         tools = BASE_TOOLS | COMPLETE_ONLY_TOOLS | {

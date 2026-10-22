@@ -41,8 +41,7 @@ struct symbol_sets {
 enum abi {
   /* CMake's bindexplib, as used by link.exe and lld-link. */
   ABI_MSVC,
-  /* lld's MinGW auto-export (lld/COFF/MinGW.cpp), which an explicit DEF file
-   * disables. */
+  /* lld's MinGW auto-export. */
   ABI_GNU,
 };
 
@@ -501,9 +500,8 @@ static int gnu_excluded_symbol(const char *symbol) {
   return 0;
 }
 
-/* Matches lld's MinGW auto-export: every regular or common external
- * definition except linker, runtime and import machinery. Read-only data such
- * as Itanium vtables and typeinfo is exported too, see
+/* Unlike bindexplib, lld's MinGW auto-export includes read-only data such as
+ * vtables and typeinfo, see
  * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L145-L166
  */
 static int add_gnu_nm_symbol(struct symbol_sets *sets, const char *symbol,
@@ -521,8 +519,7 @@ static int add_gnu_nm_symbol(struct symbol_sets *sets, const char *symbol,
   return 1;
 }
 
-/* lld doesn't auto-export a symbol whose __imp_ pointer is defined, since that
- * means it is itself imported, see
+/* lld doesn't auto-export symbols whose __imp_ pointer is defined, see
  * https://github.com/llvm/llvm-project/blob/llvmorg-23.1.2/lld/COFF/MinGW.cpp#L164-L166
  */
 static void remove_imported_symbols(struct symbol_sets *sets,
