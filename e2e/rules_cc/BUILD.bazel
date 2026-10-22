@@ -1941,11 +1941,6 @@ exec_test(
     }),
 )
 
-# A C++ shared library whose API includes a vtable, a static data member, a
-# const table and an exception thrown across the library boundary. On Windows
-# GNU targets, the statically linked C++ runtime must not export any symbols:
-# that would disable lld's auto-export for the library's own symbols and clash
-# with the test's own copy of the runtime.
 cc_library(
     name = "cxx_shared_library_lib",
     srcs = ["cxx_shared_library.cc"],
@@ -1954,7 +1949,6 @@ cc_library(
 
 cc_shared_library(
     name = "cxx_shared_library",
-    # TODO: Use the default name once MinGW DLLs are named lib<name>.dll.
     shared_lib_name = select({
         "@platforms//os:macos": "libcxx_shared_library.dylib",
         "@platforms//os:windows": "libcxx_shared_library.dll",

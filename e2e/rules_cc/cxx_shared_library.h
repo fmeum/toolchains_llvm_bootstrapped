@@ -13,7 +13,6 @@ extern const int kPrimes[3];
 
 int make_and_count();
 
-// Throws a standard exception across the shared library boundary.
 void throw_out_of_range();
 
 #endif  // CXX_SHARED_LIBRARY_H_
