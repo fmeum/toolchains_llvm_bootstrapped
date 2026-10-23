@@ -517,8 +517,7 @@ cc_library(
 
 cc_runtime_stage0_asan_static_library(
     # The generic Stage 0 route inherits the configured ASan runtime policy.
-    # Emitted as libc++.a, the name lld's MinGW auto-export skips.
-    name = "c++",
+    name = "libcxx.static.stage0_asan_inheriting",
     visibility = ["//visibility:public"],
     deps = [
         ":libcxx",
@@ -533,6 +532,15 @@ cc_runtime_stage0_static_library(
     deps = [
         ":libcxx",
     ],
+)
+
+copy_file(
+    # lld's MinGW auto-export excludes the runtime by its archive basename.
+    name = "libcxx.static.gnu_link_name",
+    src = "libcxx.static.stage0_asan_inheriting",
+    out = "libc++.a",
+    allow_symlink = True,
+    visibility = ["//visibility:public"],
 )
 
 copy_file(
@@ -567,7 +575,7 @@ alias(
     name = "libcxx.static",
     actual = select({
         ":windows_msvc": ":libcxx.static.msvc_link_name",
-        "//conditions:default": ":c++",
+        "//conditions:default": ":libcxx.static.stage0_asan_inheriting",
     }),
     visibility = ["//visibility:public"],
 )
