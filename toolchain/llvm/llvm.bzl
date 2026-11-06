@@ -500,6 +500,7 @@ def declare_llvm_targets(*, suffix = ""):
             "@llvm//platforms/config:gnu": [
                 "@llvm//runtimes/glibc:glibc_headers_include_search_directory",
             ],
+            "@llvm//platforms/config:no_libc": [],
         }),
     )
 

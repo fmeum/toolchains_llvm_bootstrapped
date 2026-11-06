@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Verifies how the given ELF binary is linked. Each expectation is one of:
 #   fully_static: the binary has no dynamic loader and doesn't need any shared libraries.
+#   no_needed: the binary doesn't need any shared libraries.
 #   needs:<suffix>: the binary has a DT_NEEDED entry that ends with suffix.
 #   lacks:<suffix>: the binary has no DT_NEEDED entry that ends with suffix.
 set -euo pipefail
@@ -23,6 +24,11 @@ for expectation in "$@"; do
       if "$readelf" -l "$binary" | grep -q "INTERP"; then
         fail "has a dynamic loader"
       fi
+      if grep -q "(NEEDED)" <<<"$dynamic"; then
+        fail "needs shared libraries"
+      fi
+      ;;
+    no_needed)
       if grep -q "(NEEDED)" <<<"$dynamic"; then
         fail "needs shared libraries"
       fi

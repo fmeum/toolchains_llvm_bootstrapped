@@ -1,0 +1,1 @@
+int freestanding_add(int a, int b) { return a + b; }

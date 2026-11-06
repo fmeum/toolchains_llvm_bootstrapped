@@ -660,10 +660,21 @@ cc_feature_set(
     }),
 )
 
+# The choice of no libc can be delivered if it isn't overridden by a //constraints/libc value.
+cc_feature_set(
+    name = "known_no_libc",
+    all_of = select({
+        "//platforms/config:no_libc": ["@rules_cc//cc/toolchains/features/libc:no_libc"],
+        "//conditions:default": [],
+    }),
+)
+
 # The options of @rules_cc//cc/cxx_runtime:preference that this toolchain can deliver.
 cc_feature_set(
     name = "cxx_runtime_known_features",
-    all_of = select({
+    all_of = [
+        "@rules_cc//cc/toolchains/features/cxx_runtime:no_cxx_runtime",
+    ] + select({
         "@platforms//os:linux": [
             "@rules_cc//cc/toolchains/features/cxx_runtime:bundled_cxx_runtime",
             "@rules_cc//cc/toolchains/features/cxx_runtime:dynamic_cxx_runtime",

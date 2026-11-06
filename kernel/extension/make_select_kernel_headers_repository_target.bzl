@@ -54,6 +54,10 @@ def _declare_libc_kernel_headers_aliases(name, bazel_target):
         if not versions:
             continue
 
+        # Code without a libc isn't limited by the version of one.
+        if _kernel_headers_available(target_arch, LIBC_KERNEL_VERSIONS["musl"]):
+            versions["@llvm//platforms/config:no_libc"] = _kernel_headers_repository_target(target_arch, LIBC_KERNEL_VERSIONS["musl"], bazel_target)
+
         target_name = "{}_{}_{}".format(name, target_os, target_arch)
         native.alias(
             name = target_name,

@@ -56,6 +56,14 @@ def declare_config_settings_libc_aware():
         visibility = ["//visibility:public"],
     )
 
+    # Other OSes also have no libc for this setting, but they don't choose it.
+    native.config_setting(
+        name = "no_libc",
+        constraint_values = ["@platforms//os:linux"],
+        flag_values = {":target_libc_family": "none"},
+        visibility = ["//visibility:public"],
+    )
+
     # The settings for specific libcs also check the family so that they specialize the ones above.
     for glibc in GLIBCS:
         native.config_setting(
@@ -87,6 +95,13 @@ def declare_config_settings_libc_aware():
             name = "{}_{}_gnu".format(target_os, target_cpu),
             constraint_values = constraint_values,
             flag_values = {":target_libc_family": "gnu"},
+            visibility = ["//visibility:public"],
+        )
+
+        native.config_setting(
+            name = "{}_{}_none".format(target_os, target_cpu),
+            constraint_values = constraint_values,
+            flag_values = {":target_libc_family": "none"},
             visibility = ["//visibility:public"],
         )
 

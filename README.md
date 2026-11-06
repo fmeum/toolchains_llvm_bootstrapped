@@ -221,6 +221,7 @@ platform(
 | `musl` | Currently the same as `static-musl`, as dynamically linking musl isn't supported yet. |
 | `static-musl` | Fully statically linked against the latest version of musl. Viable on all Linux platforms, whether or not they declare a libc. |
 | `static-glibc` | Not supported, the toolchain fails with an error. |
+| `none` | Compiled as freestanding with only the headers of the compiler and the Linux UAPI and linked fully statically against compiler-rt, without a libc, startup files and a C++ runtime. Viable on all Linux platforms. Code has to define its own `_start` and provide `memcpy` and similar functions that the compiler may call. Shared libraries can still be linked, but executables can't use `dynamic_deps`. |
 
 For example, `--@platforms_contrib//os/linux/libc:preference=glibc,static-musl`
 uses the glibc of platforms that declare it and builds fully static binaries for
@@ -252,6 +253,9 @@ of these options, of which the first viable one is used:
 | `static-libc++` or `static-libstdc++` | ✅ All binaries, with `cc_library` no longer producing shared objects | ❌ | ✅ `static-libc++` |
 | `bundled-libc++` or `bundled-libstdc++` | ✅ Shared copy in the runfiles | ❌ | ❌ |
 | `libc++` | ❌ | ✅ From the OS | ❌ |
+| `none` | ✅ No C++ headers and libraries, the unwinder stays | ✅ | ✅ |
+
+`none` is implied by a libc preference of `none`, which rules out all other options.
 
 The flavor has to match the `@llvm//constraints/cxxstdlib` value of the target
 platform. Options that this toolchain can't deliver fail with an error instead of
@@ -262,7 +266,7 @@ On Windows, `--@platforms_contrib//os/windows/crt:preference=static-ucrt` select
 `static_link_msvcrt` feature keeps working.
 
 To make code depend on the libc it's compiled against, `select()` on
-`@rules_cc//cc/libc:glibc` and `@rules_cc//cc/libc:musl`.
+`@rules_cc//cc/libc:glibc`, `@rules_cc//cc/libc:musl` and `@rules_cc//cc/libc:none`.
 
 ### C++ standard library selection
 

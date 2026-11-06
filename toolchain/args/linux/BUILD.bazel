@@ -180,6 +180,23 @@ cc_args(
     target_compatible_with = ["@platforms//os:linux"],
 )
 
+# Compiler-rt is part of the static runtime libraries in this case.
+cc_args(
+    name = "no_libc_link_flags",
+    actions = [
+        "@rules_cc//cc/toolchains/actions:link_actions",
+    ],
+    args = ["-nostdlib"],
+)
+
+cc_args(
+    name = "no_libc_compile_flags",
+    actions = [
+        "//toolchain:source_compile_actions",
+    ],
+    args = ["-ffreestanding"],
+)
+
 alias(
     name = "default_libs",
     actual = select({

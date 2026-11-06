@@ -1,3 +1,4 @@
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo", "bool_flag", "bool_setting", "string_flag")
 
 OPTIMIZATION_MODES = [
@@ -156,8 +157,15 @@ def config_settings():
         scope = "target",
     )
     native.config_setting(
-        name = "nostdincxx_enabled",
+        name = "nostdincxx_flag_enabled",
         flag_values = {"nostdincxx": "true"},
+    )
+    selects.config_setting_group(
+        name = "nostdincxx_enabled",
+        match_any = [
+            "nostdincxx_flag_enabled",
+            "@rules_cc//cc/cxx_runtime:none_preferred",
+        ],
     )
 
     # Supported on Bazel 9+ only.
@@ -167,8 +175,15 @@ def config_settings():
         scope = "target",
     )
     native.config_setting(
-        name = "nostdlibxx_enabled",
+        name = "nostdlibxx_flag_enabled",
         flag_values = {"nostdlibxx": "true"},
+    )
+    selects.config_setting_group(
+        name = "nostdlibxx_enabled",
+        match_any = [
+            "nostdlibxx_flag_enabled",
+            "@rules_cc//cc/cxx_runtime:none_preferred",
+        ],
     )
 
     # This flag controls the optimization mode for the compilation of the target

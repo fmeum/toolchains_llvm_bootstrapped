@@ -25,6 +25,10 @@ string_setting(
         # "stage3", # depends on above: libc++
         "complete",  # depends on above: user programs.
     ],
+    visibility = [
+        "//platforms/config:__pkg__",
+        "//toolchain:__subpackages__",
+    ],
 )
 
 alias(
@@ -154,6 +158,7 @@ cc_args_list(
     name = "default_startfiles",
     args = select({
         "@platforms//os:macos": [],
+        "//platforms/config:no_libc": [],
         "@platforms//os:linux": [
             "//toolchain/args:crt_search_directory",
         ],
@@ -186,6 +191,7 @@ cc_args_list(
         "@platforms//os:macos": [
             "//toolchain/args/macos:default_libs",
         ],
+        "//platforms/config:no_libc": [],
         "@platforms//os:linux": [
             "//toolchain/args/linux:default_libs",
         ],
@@ -224,6 +230,7 @@ cc_args_list(
             # We want to provide the stubs for macOS.
             "//toolchain/args:libunwind_library_search_paths",
         ],
+        "//platforms/config:no_libc": [],
         "@platforms//os:linux": [
             "//toolchain/args:libunwind_library_search_paths",
         ],
@@ -284,6 +291,7 @@ cc_args_list(
         # macOS defaults to compiler-rt; explicitly selecting it warns with
         # -nodefaultlibs (used by Rust) or -nostdlib.
         "@platforms//os:macos": [],
+        "//platforms/config:no_libc": [],
         "//conditions:default": [
             "//toolchain/args:rtlib_compiler_rt",
         ],
@@ -294,6 +302,7 @@ cc_args_list(
     name = "unwindlib",
     args = select({
         "@platforms//os:windows": ["//toolchain/args/windows:unwindlib"],
+        "//platforms/config:no_libc": [],
         "//conditions:default": ["//toolchain/args:unwindlib_none"],
     }),
 )
@@ -327,6 +336,11 @@ cc_args_list(
         "//platforms/config:gnu": [
             "//toolchain/args/linux:kernel_headers_include_search_paths",
             "//toolchain/args/linux:glibc_headers_include_search_paths",
+        ],
+        "//platforms/config:no_libc": [
+            "//toolchain/args/linux:kernel_headers_include_search_paths",
+            "//toolchain/args/linux:no_libc_compile_flags",
+            "//toolchain/args/linux:no_libc_link_flags",
         ],
         "//conditions:default": [],
     }) + [

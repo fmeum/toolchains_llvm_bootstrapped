@@ -102,6 +102,9 @@ def libc_test_suite(name):
         # Without libc constraints, only fully static options are viable, otherwise it's the default.
         ("no_libc", "no_libc", {}, "gnu.2.28"),
         ("no_libc_prefer_static_musl", "no_libc", {_PREFERENCE: ["static-musl"]}, "musl"),
+        ("none", "no_libc", {_PREFERENCE: ["none"]}, "none"),
+        ("none_on_glibc", "glibc_2.31", {_PREFERENCE: ["none"]}, "none"),
+        ("glibc_over_none", "glibc_2.31", {_PREFERENCE: ["glibc", "none"]}, "gnu.2.31"),
         ("glibc", "glibc_2.31", {}, "gnu.2.31"),
         # The ranking only matters if more than one libc is available.
         ("glibc_prefer_musl", "glibc_2.31", {_PREFERENCE: ["musl", "glibc"]}, "gnu.2.31"),

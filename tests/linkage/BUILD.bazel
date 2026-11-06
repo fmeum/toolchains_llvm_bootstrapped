@@ -101,6 +101,40 @@ cc_binary(
     deps = [":lib"],
 )
 
+# Built with --@platforms_contrib//os/linux/libc:preference=none.
+cc_test(
+    name = "freestanding_test",
+    srcs = ["freestanding.c"],
+    tags = ["manual"],
+)
+
+cc_binary(
+    name = "libfreestanding.so",
+    srcs = ["freestanding_lib.c"],
+    linkshared = True,
+    tags = ["manual"],
+)
+
+cc_shared_library(
+    name = "freestanding_shared",
+    shared_lib_name = "libfreestanding_shared.so",
+    tags = ["manual"],
+    deps = [":freestanding_lib"],
+)
+
+cc_library(
+    name = "freestanding_lib",
+    srcs = ["freestanding_lib.c"],
+    tags = ["manual"],
+)
+
+# Built with --@rules_cc//cc/cxx_runtime:preference=none.
+cc_test(
+    name = "without_cxx_runtime_test",
+    srcs = ["no_cxx_runtime.cc"],
+    tags = ["manual"],
+)
+
 alias(
     name = "llvm-readelf",
     actual = platform_llvm_binary("llvm-readelf"),
@@ -232,6 +266,43 @@ _LIBCXX = "libc++.so.1"
             [],
             ["fully_static"],
         ),
+        # Without a libc, there is no dynamic loader, but shared libraries can still be linked.
+        (
+            "no_libc_on_glibc_platform",
+            ":freestanding_test",
+            "glibc",
+            ["none"],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "no_libc_on_no_libc_platform",
+            ":freestanding_test",
+            "no_libc",
+            ["none"],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "no_libc_shared_library",
+            ":libfreestanding.so",
+            "glibc",
+            ["none"],
+            [],
+            ["no_needed"],
+        ),
+        # Without a C++ runtime, the libc stays and libraries still follow the link mode.
+        (
+            "no_cxx_runtime",
+            ":without_cxx_runtime_test",
+            "glibc",
+            [],
+            ["none"],
+            [
+                "lacks:" + _LIBCXX,
+                "needs:libc.so.6",
+            ],
+        ),
         # The C++ runtime ranking is independent of the link mode.
         (
             "static_runtime_with_static_libs",
@@ -333,6 +404,7 @@ _LIBCXX = "libc++.so.1"
 
 linkage_failure_test_suite(
     name = "linkage_failure",
+    dynamic_deps = ":dynamic_deps",
     shared_library = ":shared",
     target = ":static_libs",
 )

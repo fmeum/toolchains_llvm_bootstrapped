@@ -64,6 +64,8 @@ filegroup(
     name = "static_runtime_lib",
     srcs = select({
         "@platforms//os:uefi": [],
+        # -nostdlib also drops compiler-rt, which freestanding code still needs.
+        "//platforms/config:no_libc": ["//runtimes/compiler-rt:clang_rt.builtins.static"],
         "//conditions:default": ["//runtimes/cxxstdlib:static_runtime_lib"],
     }),
     visibility = ["//visibility:public"],

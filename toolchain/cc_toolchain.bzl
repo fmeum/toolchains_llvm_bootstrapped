@@ -112,6 +112,7 @@ def cc_toolchain(
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features/runtime_library_search_directories:feature",
             "@llvm//toolchain/features:cxx_runtime_known_features",
+            "@llvm//toolchain/features:known_no_libc",
             "@llvm//toolchain/features:parse_headers",
             "@llvm//toolchain/features/header_modules:all_header_module_features",
             "@llvm//toolchain/features:external_include_paths",
@@ -221,18 +222,24 @@ def cc_toolchain(
                 "@llvm//toolchain/features:fdo_optimize",
                 "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
+                "@rules_cc//cc/toolchains/features/cxx_runtime:no_cxx_runtime",
+                "@rules_cc//cc/toolchains/features/libc:no_libc",
             ],
             "@llvm//toolchain:runtimes_stage1": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
                 "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
+                "@rules_cc//cc/toolchains/features/cxx_runtime:no_cxx_runtime",
+                "@rules_cc//cc/toolchains/features/libc:no_libc",
             ],
             "@llvm//toolchain:runtimes_stage1_hosted": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
                 "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
+                "@rules_cc//cc/toolchains/features/cxx_runtime:no_cxx_runtime",
+                "@rules_cc//cc/toolchains/features/libc:no_libc",
             ],
             "//conditions:default": [name + "_generic_known_features"],
         }),
@@ -251,7 +258,10 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_selected_known_features",
         all_of = select({
-            "@platforms//os:uefi": ["@llvm//toolchain/features/legacy:uefi_legacy_replacements"],
+            "@platforms//os:uefi": [
+                "@llvm//toolchain/features/legacy:uefi_legacy_replacements",
+                "@rules_cc//cc/toolchains/features/cxx_runtime:no_cxx_runtime",
+            ],
             "@llvm//constraints/windows/abi:msvc": [name + "_msvc_known_features"],
             "//conditions:default": [name + "_generic_selected_known_features"],
         }),
@@ -360,6 +370,7 @@ def cc_toolchain(
         target_libc = select({
             "@llvm//platforms/config:gnu": "glibc",
             "@llvm//platforms/config:musl": "musl",
+            "@llvm//platforms/config:no_libc": "none",
             "@llvm//platforms/config:windows_crt_msvcrt": "msvcrt",
             "@llvm//platforms/config:windows_crt_ucrt": "ucrt",
             "@platforms//os:macos": "macosx",

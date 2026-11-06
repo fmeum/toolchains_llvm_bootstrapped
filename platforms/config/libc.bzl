@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:common_settings.bzl", "BuildSettingInfo")
 load("@platforms_contrib//os/linux/libc:libc.bzl", "PreferredLibcInfo", "check_preferred_libc")
 load("//constraints/libc:libc_versions.bzl", "DEFAULT_LIBC", "GLIBC_VERSIONS", "LIBCS")
 load("//platforms:common.bzl", "LIBC_SUPPORTED_TARGETS")
@@ -27,6 +28,10 @@ def _target_libc(ctx):
         return DEFAULT_LIBC
 
     check_preferred_libc(preferred_libc)
+    if preferred_libc.flavor == "none":
+        # Compiler-rt is built against the headers of a libc, but the objects that freestanding code
+        # needs don't call into it.
+        return "none" if ctx.attr._runtime_stage[BuildSettingInfo].value == "complete" else "musl"
     if preferred_libc.flavor == "musl":
         return "musl"
     if not glibc_available:
@@ -47,9 +52,9 @@ target_libc = rule(
     doc = """Provides the libc that Linux targets compile against for config_setting.flag_values.
 
 A //constraints/libc value on the target platform takes precedence. Otherwise, the libc is the one
-chosen by @platforms_contrib//os/linux/libc:preference, or DEFAULT_LIBC if the platform has no libc
-constraints and no option is viable. For glibc, it's the newest supported version that the platform
-makes available, or DEFAULT_LIBC if it has no glibc constraints.
+chosen by @platforms_contrib//os/linux/libc:preference, which can also be "none", or DEFAULT_LIBC if
+the platform has no libc constraints and no option is viable. For glibc, it's the newest supported
+version that the platform makes available, or DEFAULT_LIBC if it has no glibc constraints.
 """,
     attrs = {
         "family": attr.bool(doc = "Whether to omit the glibc version."),
@@ -67,5 +72,6 @@ makes available, or DEFAULT_LIBC if it has no glibc constraints.
         "_preferred_libc": attr.label(default = "@platforms_contrib//os/linux/libc:preferred"),
         "_linux": attr.label(default = "@platforms//os:linux"),
         "_musl_available": attr.label(default = _MUSL + "available"),
+        "_runtime_stage": attr.label(default = "//toolchain:runtime_stage"),
     },
 )
