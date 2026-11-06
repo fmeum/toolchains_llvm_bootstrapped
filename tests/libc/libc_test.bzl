@@ -46,7 +46,7 @@ def _expect_failure(message):
 
     return impl
 
-_PREFERENCE = str(Label("//config/linux:libc_preference"))
+_PREFERENCE = str(Label("@platforms_contrib//os/linux/libc:preference"))
 
 _X86_64_LINUX = ["@platforms//cpu:x86_64", "@platforms//os:linux"]
 
@@ -85,8 +85,8 @@ def libc_test_suite(name):
         "no_libc": [],
         "glibc_2.31": glibc_version_constraints("2.31"),
         "glibc_2.45": glibc_version_constraints("2.45"),
-        "glibc_2.17": glibc_version_constraints("2.17"),
-        "glibc_2.17_and_musl": glibc_version_constraints("2.17") + musl_version_constraints("1.2"),
+        "glibc_2.15": glibc_version_constraints("2.15"),
+        "glibc_2.15_and_musl": glibc_version_constraints("2.15") + musl_version_constraints("1.2"),
         "musl": musl_version_constraints("1.2"),
         "glibc_2.35_and_musl": glibc_version_constraints("2.35") + musl_version_constraints("1.2"),
         "legacy_gnu_2.31_and_musl": ["//constraints/libc:gnu.2.31"] + musl_version_constraints("1.2"),
@@ -99,17 +99,16 @@ def libc_test_suite(name):
         )
 
     for test, platform, settings, libc in [
-        # Without libc constraints, every libc is available, glibc at the default version.
+        # Without libc constraints, only fully static options are viable, otherwise it's the default.
         ("no_libc", "no_libc", {}, "gnu.2.28"),
-        ("no_libc_prefer_musl", "no_libc", {_PREFERENCE: ["musl", "glibc"]}, "musl"),
+        ("no_libc_prefer_static_musl", "no_libc", {_PREFERENCE: ["static-musl"]}, "musl"),
         ("glibc", "glibc_2.31", {}, "gnu.2.31"),
         # The ranking only matters if more than one libc is available.
         ("glibc_prefer_musl", "glibc_2.31", {_PREFERENCE: ["musl", "glibc"]}, "gnu.2.31"),
         ("newer_glibc", "glibc_2.45", {}, "gnu.2.44"),
-        ("older_glibc", "glibc_2.17", {}, "none"),
-        # Unsupported glibc versions are only chosen if no other listed libc is available.
-        ("older_glibc_and_musl", "glibc_2.17_and_musl", {}, "musl"),
-        ("older_glibc_and_musl_only_glibc", "glibc_2.17_and_musl", {_PREFERENCE: ["glibc"]}, "none"),
+        ("older_glibc", "glibc_2.15", {}, "none"),
+        # The preference doesn't depend on which glibc versions the toolchain supports.
+        ("older_glibc_and_musl", "glibc_2.15_and_musl", {}, "none"),
         ("musl", "musl", {}, "musl"),
         ("glibc_and_musl", "glibc_2.35_and_musl", {}, "gnu.2.35"),
         ("glibc_and_musl_prefer_musl", "glibc_2.35_and_musl", {_PREFERENCE: ["musl", "glibc"]}, "musl"),
@@ -120,7 +119,7 @@ def libc_test_suite(name):
         ("repo_platform", "//platforms:linux_x86_64_gnu.2.39", {}, "gnu.2.39"),
         ("repo_musl_platform", "//platforms:linux_x86_64_musl", {}, "musl"),
         # The ranking only applies to Linux.
-        ("macos", "//platforms:macos_aarch64", {_PREFERENCE: ["bionic"]}, "none"),
+        ("macos", "//platforms:macos_aarch64", {_PREFERENCE: ["static-musl"]}, "none"),
     ]:
         # Unsupported glibc versions match no version, which fails select()s without a default.
         family = "gnu" if test.startswith("older_glibc") and libc == "none" else libc.partition(".")[0]
@@ -143,19 +142,13 @@ def libc_test_suite(name):
             "unlisted_libc",
             "glibc_2.31",
             {_PREFERENCE: ["musl"]},
-            "doesn't list any libc that the target platform makes available: glibc",
+            "since it only declares \"glibc\" as available",
         ),
         (
             "empty_ranking",
-            "no_libc",
-            {_PREFERENCE: []},
-            "doesn't list any libc that the target platform makes available: glibc, musl",
-        ),
-        (
-            "unknown_libc",
             "glibc_2.35_and_musl",
-            {_PREFERENCE: ["bionic", "glibc"]},
-            "unknown libc 'bionic', expected one of: glibc, musl",
+            {_PREFERENCE: []},
+            "since it only declares \"glibc\" and \"musl\" as available",
         ),
     ]:
         analysis_test(

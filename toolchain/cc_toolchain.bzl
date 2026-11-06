@@ -34,6 +34,7 @@ def cc_toolchain(
             "@llvm//toolchain/features:no_windows_export_all_symbols",
             "@llvm//toolchain/features:skip_virtual_includes",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
+            "@llvm//toolchain/features:cxx_runtime_known_features",
             "@llvm//toolchain/features:targets_windows",
             "@llvm//toolchain/features:thin_lto_linkstatic_tests_use_shared_nonlto_backends",
             "@llvm//toolchain/features:thin_lto_all_linkstatic_use_shared_nonlto_backends",
@@ -110,6 +111,7 @@ def cc_toolchain(
             "@rules_cc//cc/toolchains/args/layering_check:use_module_maps",
             "@llvm//toolchain/features:static_link_cpp_runtimes",
             "@llvm//toolchain/features/runtime_library_search_directories:feature",
+            "@llvm//toolchain/features:cxx_runtime_known_features",
             "@llvm//toolchain/features:parse_headers",
             "@llvm//toolchain/features/header_modules:all_header_module_features",
             "@llvm//toolchain/features:external_include_paths",
@@ -174,6 +176,7 @@ def cc_toolchain(
             "@platforms//os:uefi": [],
             "@platforms//os:none": [],
         }) + [
+            "@llvm//toolchain/features:default_fully_static_link",
             "@llvm//toolchain/features:hosted_dynamic_linker",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:sanitize_pwd",
@@ -197,6 +200,7 @@ def cc_toolchain(
     cc_feature_set(
         name = name + "_generic_runtimes_only_enabled_features",
         all_of = [
+            "@llvm//toolchain/features:default_fully_static_link",
             "@llvm//toolchain/features:prefer_pic_for_opt_binaries",
             "@llvm//toolchain/features:sanitize_pwd",
             "@rules_cc//cc/toolchains/args/layering_check:module_maps",
@@ -215,16 +219,19 @@ def cc_toolchain(
             "@llvm//toolchain:runtimes_none": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
+                "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
             ],
             "@llvm//toolchain:runtimes_stage1": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
+                "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
             ],
             "@llvm//toolchain:runtimes_stage1_hosted": [
                 "@llvm//toolchain/features:external_include_paths",
                 "@llvm//toolchain/features:fdo_optimize",
+                "@llvm//toolchain/features:fully_static_link",
                 "@llvm//toolchain/features:skip_virtual_includes",
             ],
             "//conditions:default": [name + "_generic_known_features"],

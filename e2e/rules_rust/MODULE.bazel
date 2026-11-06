@@ -100,3 +100,16 @@ crate.from_specs(
     ],
 )
 use_repo(crate, "crates")
+
+# Prototype: consume the linkage API from the forks.
+git_override(
+    module_name = "rules_cc",
+    commit = "e61cb4aca5d0a6c57348fa3e5ef00aa4c37bac41",
+    remote = "https://github.com/fmeum/rules_cc.git",
+)
+
+git_override(
+    module_name = "platforms_contrib",
+    commit = "e6d2a9faf6e93336a2b5307e93906b1d69c2ce2f",
+    remote = "https://github.com/fmeum/platforms_contrib.git",
+)

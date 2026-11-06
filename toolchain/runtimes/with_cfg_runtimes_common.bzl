@@ -28,6 +28,12 @@ def configure_builder_for_runtimes(builder, runtime_stage, linkmode = "static", 
         runtime_stage,
     )
 
+    # How binaries link the C++ runtime doesn't affect how it's built itself.
+    builder.set(
+        Label("@rules_cc//cc/cxx_runtime:preference"),
+        [],
+    )
+
     builder.set(
         Label("//runtimes:linkmode"),
         linkmode,

@@ -1,0 +1,338 @@
+load("@platforms_contrib//os/linux/libc/glibc:glibc.bzl", "glibc_version_constraints")
+load("@platforms_contrib//os/linux/libc/musl:musl.bzl", "musl_version_constraints")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_shared_library.bzl", "cc_shared_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
+load("//:defs.bzl", "exec_test")
+load("//toolchain:selects.bzl", "platform_llvm_binary")
+load(":defs.bzl", "linkage_binary")
+load(":linkage_failure_test.bzl", "linkage_failure_test_suite")
+
+# Output directories contain the platform name, so these names must differ from //platforms.
+[
+    (
+        platform(
+            name = "linkage_test_linux_{}_no_libc".format(cpu),
+            constraint_values = [
+                "@platforms//cpu:" + cpu,
+                "@platforms//os:linux",
+            ],
+        ),
+        platform(
+            name = "linkage_test_linux_{}_glibc".format(cpu),
+            constraint_values = [
+                "@platforms//cpu:" + cpu,
+                "@platforms//os:linux",
+            ] + glibc_version_constraints("2.28"),
+        ),
+        platform(
+            name = "linkage_test_linux_{}_musl".format(cpu),
+            constraint_values = [
+                "@platforms//cpu:" + cpu,
+                "@platforms//os:linux",
+            ] + musl_version_constraints("1.2"),
+        ),
+    )
+    for cpu in [
+        "aarch64",
+        "x86_64",
+    ]
+]
+
+cc_library(
+    name = "lib",
+    srcs = ["lib.cc"],
+    hdrs = ["lib.h"],
+    tags = ["manual"],
+)
+
+cc_binary(
+    name = "static_libs",
+    srcs = ["main.cc"],
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_binary(
+    name = "dynamic_libs",
+    srcs = ["main.cc"],
+    linkstatic = False,
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_test(
+    name = "default_test",
+    srcs = ["main.cc"],
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_test(
+    name = "linkstatic_test",
+    srcs = ["main.cc"],
+    linkstatic = True,
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_test(
+    name = "static_runtime_override_test",
+    srcs = ["main.cc"],
+    features = ["static_cxx_runtime"],
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_shared_library(
+    name = "shared",
+    shared_lib_name = "libshared.so",
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+cc_binary(
+    name = "dynamic_deps",
+    srcs = ["main.cc"],
+    dynamic_deps = [":shared"],
+    tags = ["manual"],
+    deps = [":lib"],
+)
+
+alias(
+    name = "llvm-readelf",
+    actual = platform_llvm_binary("llvm-readelf"),
+)
+
+# Shared objects are named after the configuration if a transition changed it.
+_LIB = "tests_Slinkage_Sliblib.so"
+
+_LIBCXX = "libc++.so.1"
+
+# Each entry is the name of the test, the binary and the platform, the libc and C++ runtime rankings
+# and the expected linkage.
+[
+    (
+        linkage_binary(
+            name = name + "_binary",
+            testonly = True,
+            binary = binary,
+            cxx_runtime_preference = cxx_runtime,
+            libc_preference = libc,
+            tags = ["manual"],
+            target_platform = ":linkage_test_linux_x86_64_" + platform,
+        ),
+        exec_test(
+            sh_test,
+            name = name + "_test",
+            srcs = ["verify_linkage.sh"],
+            args = [
+                "$(rootpath :llvm-readelf)",
+                "$(rootpath :{}_binary)".format(name),
+            ] + expectations,
+            data = [":{}_binary".format(name)],
+            tools = [":llvm-readelf"],
+        ),
+    )
+    for name, binary, platform, libc, cxx_runtime, expectations in [
+        # The C++ runtime follows the link mode by default.
+        (
+            "default_binary",
+            ":static_libs",
+            "glibc",
+            [],
+            [],
+            [
+                "lacks:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "default_test",
+            ":default_test",
+            "glibc",
+            [],
+            [],
+            [
+                "needs:" + _LIBCXX,
+                "needs:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        # musl binaries are fully static, so a test can't use a shared C++ runtime or libraries.
+        (
+            "default_test_musl",
+            ":default_test",
+            "musl",
+            [],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "default_binary_dynamic_deps",
+            ":dynamic_deps",
+            "glibc",
+            [],
+            [],
+            [
+                "needs:libshared.so",
+                "lacks:" + _LIBCXX,
+            ],
+        ),
+        # The libc ranking decides between the libc of the platform and a fully static binary.
+        (
+            "static_musl_on_glibc_platform",
+            ":default_test",
+            "glibc",
+            ["static-musl"],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "static_musl_on_no_libc_platform",
+            ":default_test",
+            "no_libc",
+            ["static-musl"],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "ranking_prefers_platform_glibc",
+            ":default_test",
+            "glibc",
+            [
+                "glibc",
+                "static-musl",
+            ],
+            [],
+            ["needs:libc.so.6"],
+        ),
+        (
+            "ranking_falls_back_to_static_on_musl",
+            ":default_test",
+            "musl",
+            [
+                "glibc",
+                "static-musl",
+            ],
+            [],
+            ["fully_static"],
+        ),
+        (
+            "ranking_falls_back_to_static_on_no_libc",
+            ":default_test",
+            "no_libc",
+            [
+                "glibc",
+                "static-musl",
+            ],
+            [],
+            ["fully_static"],
+        ),
+        # The C++ runtime ranking is independent of the link mode.
+        (
+            "static_runtime_with_static_libs",
+            ":static_libs",
+            "glibc",
+            [],
+            ["static-libc++"],
+            [
+                "lacks:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "static_runtime_forces_static_libs",
+            ":dynamic_libs",
+            "glibc",
+            [],
+            ["static-libc++"],
+            [
+                "lacks:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "static_runtime_test",
+            ":default_test",
+            "glibc",
+            [],
+            ["static-libc++"],
+            [
+                "lacks:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "static_runtime_keeps_explicit_shared_libs",
+            ":dynamic_deps",
+            "glibc",
+            [],
+            ["static-libc++"],
+            [
+                "needs:libshared.so",
+                "lacks:" + _LIBCXX,
+            ],
+        ),
+        (
+            "bundled_runtime_with_static_libs",
+            ":static_libs",
+            "glibc",
+            [],
+            ["bundled-libc++"],
+            [
+                "needs:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "bundled_runtime_with_dynamic_libs",
+            ":dynamic_libs",
+            "glibc",
+            [],
+            ["bundled-libc++"],
+            [
+                "needs:" + _LIBCXX,
+                "needs:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+        (
+            "bundled_runtime_shared_library",
+            ":dynamic_deps",
+            "glibc",
+            [],
+            ["bundled-libc++"],
+            [
+                "needs:libshared.so",
+                "needs:" + _LIBCXX,
+            ],
+        ),
+        # Targets can override how they link the C++ runtime.
+        (
+            "static_runtime_feature",
+            ":static_runtime_override_test",
+            "glibc",
+            [],
+            ["bundled-libc++"],
+            [
+                "lacks:" + _LIBCXX,
+                "lacks:" + _LIB,
+                "needs:libc.so.6",
+            ],
+        ),
+    ]
+]
+
+linkage_failure_test_suite(
+    name = "linkage_failure",
+    shared_library = ":shared",
+    target = ":static_libs",
+)

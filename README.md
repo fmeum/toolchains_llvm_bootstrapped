@@ -196,9 +196,10 @@ stages also support native Windows execution. See "Windows" section.
 
 ### Linux C library (glibc and musl)
 
-Linux targets compile against glibc or musl, depending on which of them the
-target platform makes available according to its
-[platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
+Linux targets compile against the libc chosen by the ranking
+`--@platforms_contrib//os/linux/libc:preference`, which defaults to `glibc,musl`.
+An option without a `static-` prefix is viable if the target platform declares
+that libc via its [platforms_contrib](https://github.com/bazel-contrib/platforms_contrib)
 constraints:
 
 ```starlark
@@ -214,18 +215,19 @@ platform(
 )
 ```
 
-* glibc: code is compiled with the headers of the newest supported glibc version
-  (2.28 to 2.44) that the platform makes available and dynamically linked
-  against compatible stubs. This ensures your program runs on systems with that
-  glibc version or newer without using newer symbols. Platforms that only make
-  older glibc versions available aren't supported.
-* musl: code is fully statically linked (no dynamic linker at all) against the
-  latest version of musl, which is the only supported mode for now.
-* Both: `--@llvm//config/linux:libc_preference` ranks them and defaults to
-  `glibc,musl`. The first listed one that the platform makes available is used,
-  so `musl` alone fails for platforms that only make glibc available. Exec
-  configurations always use the default ranking.
-* Neither: the platform is treated as making both available, with glibc 2.28.
+| Option | Result |
+|---|---|
+| `glibc` | Compiled with the headers of the newest supported glibc version that the platform declares and dynamically linked against compatible stubs, so the binary runs on systems with that glibc version or newer. |
+| `musl` | Currently the same as `static-musl`, as dynamically linking musl isn't supported yet. |
+| `static-musl` | Fully statically linked against the latest version of musl. Viable on all Linux platforms, whether or not they declare a libc. |
+| `static-glibc` | Not supported, the toolchain fails with an error. |
+
+For example, `--@platforms_contrib//os/linux/libc:preference=glibc,static-musl`
+uses the glibc of platforms that declare it and builds fully static binaries for
+all other platforms. Exec configurations always use the default ranking.
+
+Platforms that don't declare any libc and for which no option is viable use
+glibc 2.28, even if the ranking doesn't list it.
 
 `@platforms_contrib//host:native` and `@platforms_contrib//host:generic` declare
 the libc of the host, so builds for them run on the host.
@@ -234,8 +236,30 @@ The platforms in `@llvm//platforms`, e.g.
 `--platforms @llvm//platforms:linux_x86_64_gnu.2.28` or
 `--platforms @llvm//platforms:linux_aarch64_musl`, have these constraints as
 well as a `@llvm//constraints/libc` value. Such a value takes precedence over
-the platforms_contrib constraints and the flag above. It remains supported, but
-new platforms should only use the platforms_contrib constraints.
+the platforms_contrib constraints, so a ranking that contradicts it fails. It
+remains supported, but new platforms should only use the platforms_contrib
+constraints.
+
+### C++ runtime linkage
+
+By default, the C++ runtime is linked the same way as the libraries of a binary:
+statically for `cc_binary`, dynamically for `cc_test` and `linkstatic = False`. To
+choose it independently, set `--@rules_cc//cc/cxx_runtime:preference` to a ranking
+of these options, of which the first viable one is used:
+
+| Option | Linux | macOS | Windows |
+|---|---|---|---|
+| `static-libc++` or `static-libstdc++` | ✅ All binaries, with `cc_library` no longer producing shared objects | ❌ | ✅ `static-libc++` |
+| `bundled-libc++` or `bundled-libstdc++` | ✅ Shared copy in the runfiles | ❌ | ❌ |
+| `libc++` | ❌ | ✅ From the OS | ❌ |
+
+The flavor has to match the `@llvm//constraints/cxxstdlib` value of the target
+platform. Options that this toolchain can't deliver fail with an error instead of
+being ignored.
+
+On Windows, `--@platforms_contrib//os/windows/crt:preference=static-ucrt` selects
+`/MT` for the entire build with the MSVC ABI. Without this flag, the
+`static_link_msvcrt` feature keeps working.
 
 To make code depend on the libc it's compiled against, `select()` on
 `@rules_cc//cc/libc:glibc` and `@rules_cc//cc/libc:musl`.

@@ -1,4 +1,5 @@
 load("@bazel_lib//:bzl_library.bzl", "bzl_library")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@rules_cc//cc/toolchains:args.bzl", "cc_args")
 load("@rules_cc//cc/toolchains:feature.bzl", "cc_feature")
 load("@rules_cc//cc/toolchains:feature_set.bzl", "cc_feature_set")
@@ -193,8 +194,16 @@ cc_feature(
 )
 
 config_setting(
-    name = "static_crt_config",
+    name = "static_crt_requested_via_features",
     values = {"features": "static_link_msvcrt"},
+)
+
+selects.config_setting_group(
+    name = "static_crt_config",
+    match_any = [
+        ":static_crt_requested_via_features",
+        "@platforms_contrib//os/windows/crt:requires_static",
+    ],
 )
 
 cc_mutually_exclusive_category(

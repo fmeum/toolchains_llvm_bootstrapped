@@ -620,7 +620,10 @@ cc_args(
 
 cc_feature(
     name = "fully_static_link",
-    args = [":fully_static_link_args"],
+    args = select({
+        "@platforms//os:linux": ["//toolchain/args:static_link_executable"],
+        "//conditions:default": [":fully_static_link_args"],
+    }),
     overrides = "@rules_cc//cc/toolchains/features/legacy:fully_static_link",
 )
 
@@ -628,6 +631,57 @@ cc_args(
     name = "fully_static_link_args",
     actions = ["@rules_cc//cc/toolchains/actions:link_actions"],
     args = ["-static"],
+)
+
+# There is no static glibc, only stubs to link against.
+selects.config_setting_group(
+    name = "static_glibc_preferred",
+    match_all = [
+        "@platforms_contrib//os/linux/libc:glibc_preferred",
+        "@platforms_contrib//os/linux/libc:requires_fully_static",
+    ],
+)
+
+cc_feature_set(
+    name = "known_fully_static_link",
+    all_of = select({
+        ":static_glibc_preferred": [],
+        "//conditions:default": [":fully_static_link"],
+    }),
+)
+
+# Only fully static binaries are supported for musl so far, even if the preference doesn't require
+# them.
+cc_feature_set(
+    name = "default_fully_static_link",
+    all_of = select({
+        "//platforms/config:musl": [":fully_static_link"],
+        "//conditions:default": [],
+    }),
+)
+
+# The options of @rules_cc//cc/cxx_runtime:preference that this toolchain can deliver.
+cc_feature_set(
+    name = "cxx_runtime_known_features",
+    all_of = select({
+        "@platforms//os:linux": [
+            "@rules_cc//cc/toolchains/features/cxx_runtime:bundled_cxx_runtime",
+            "@rules_cc//cc/toolchains/features/cxx_runtime:dynamic_cxx_runtime",
+            "@rules_cc//cc/toolchains/features/cxx_runtime:static_cxx_runtime",
+        ],
+        # libc++ is part of the OS on macOS and static on Windows.
+        "@platforms//os:macos": [
+            "@rules_cc//cc/toolchains/features/cxx_runtime:dynamic_cxx_runtime",
+            "@rules_cc//cc/toolchains/features/cxx_runtime:system_cxx_runtime",
+        ],
+        "@platforms//os:windows": [
+            "@rules_cc//cc/toolchains/features/cxx_runtime:static_cxx_runtime",
+        ],
+        "//conditions:default": [],
+    }) + select({
+        "//constraints/cxxstdlib:libstdcxx": ["@rules_cc//cc/toolchains/features/cxx_runtime:libstdcxx_runtime"],
+        "//conditions:default": ["@rules_cc//cc/toolchains/features/cxx_runtime:libcxx_runtime"],
+    }),
 )
 
 cc_feature(
@@ -721,7 +775,7 @@ cc_feature_set(
         ":coverage_stub",
         ":llvm_coverage_map_format",
         ":gcc_coverage_map_format",
-        ":fully_static_link",
+        ":known_fully_static_link",
     ] + select({
         "@platforms//os:windows": [
             ":copy_dynamic_libraries_to_binary",

@@ -10,6 +10,20 @@ bazel_dep(name = "bazel_features", version = "1.42.0")
 bazel_dep(name = "platforms", version = "1.1.0")
 bazel_dep(name = "platforms_contrib", version = "1.0.0-alpha.0")
 bazel_dep(name = "rules_cc", version = "0.2.25")
+
+# Prototype: consume the linkage API from the forks.
+git_override(
+    module_name = "rules_cc",
+    commit = "e61cb4aca5d0a6c57348fa3e5ef00aa4c37bac41",
+    remote = "https://github.com/fmeum/rules_cc.git",
+)
+
+git_override(
+    module_name = "platforms_contrib",
+    commit = "e6d2a9faf6e93336a2b5307e93906b1d69c2ce2f",
+    remote = "https://github.com/fmeum/platforms_contrib.git",
+)
+
 bazel_dep(name = "rules_shell", version = "0.8.0")
 bazel_dep(name = "rules_python", version = "1.8.0")
 bazel_dep(name = "with_cfg.bzl", version = "0.12.0")

@@ -41,6 +41,7 @@ def _reset_sanitizers_impl(settings, attr):
         # we are compiling sanitizers, so we want all runtimes except sanitizers.
         # TODO(cerisier): Should this be exressed with a dedicated stage ?
         "//toolchain:runtime_stage": "complete",
+        "@rules_cc//cc/cxx_runtime:preference": [],
     }
 
 _reset_sanitizers = transition(
@@ -60,6 +61,7 @@ _reset_sanitizers = transition(
         "//command_line_option:fission",
         "//command_line_option:platforms",
         "@llvm-project//third-party:llvm_enable_zstd",
+        "@rules_cc//cc/cxx_runtime:preference",
         "//config:ubsan",
         "//config:cfi",
         "//config:msan",

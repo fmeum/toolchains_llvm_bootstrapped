@@ -7,6 +7,7 @@ bootstrap_transition = transition(
     implementation = lambda settings, attr: {
         # we are compiling runtimes without any kind of other dependencies
         "//toolchain:runtime_stage": "stage0",
+        "@rules_cc//cc/cxx_runtime:preference": [],
         # Stage0 objects (crtbegin/crtend) are linked into every binary and
         # shared library, so user flags must never leak into them. In
         # particular -fsanitize-coverage would give each shared object its own
@@ -53,6 +54,7 @@ bootstrap_transition = transition(
     inputs = [],
     outputs = [
         "//toolchain:runtime_stage",
+        "@rules_cc//cc/cxx_runtime:preference",
         "//command_line_option:copt",
         "//command_line_option:cxxopt",
         "//command_line_option:conlyopt",

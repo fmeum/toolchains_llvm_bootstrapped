@@ -103,9 +103,18 @@ config_setting(
 # rules); statically-linked cc_binary targets still add it via dynamic_deps.
 # Linux links the static runtimes, so nothing is added there; the .shared
 # targets are Darwin-only, hence the macOS gate.
+selects.config_setting_group(
+    name = "_fully_static",
+    match_any = [
+        "//platforms/config:musl",
+        "@platforms_contrib//os/linux/libc:requires_fully_static",
+    ],
+)
+
 filegroup(
     name = "dynamic_runtime_lib",
     srcs = select({
+        ":_fully_static": [],
         "@platforms//os:uefi": [],
         "//conditions:default": ["//runtimes/cxxstdlib:dynamic_runtime_lib"],
     }) + select({
